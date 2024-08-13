@@ -137,12 +137,13 @@ def get_aliases_from_select(
     - Table aliases
     - Value table function aliases
     """
-    fc = segment.get_child("from_clause")
-    if not fc:
-        # If there's no from clause then just abort.
+    aliases = []
+    fcs = segment.get_children_recursive("from_clause")
+    if len(fcs) == 0:
         return None, None
-    assert isinstance(fc, (FromClauseSegment, JoinClauseSegment))
-    aliases = fc.get_eventual_aliases()
+    for fc in fcs:
+        assert isinstance(fc, (FromClauseSegment, JoinClauseSegment))
+        aliases += fc.get_eventual_aliases()
 
     # We only want table aliases, so filter out aliases for value table
     # functions, lambda parameters and pivot columns.

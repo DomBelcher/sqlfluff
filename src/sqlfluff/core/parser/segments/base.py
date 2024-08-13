@@ -977,6 +977,17 @@ class BaseSegment(metaclass=SegmentMetaclass):
                 buff.append(seg)
         return buff
 
+    def get_children_recursive(self, *seg_type: str) -> List[BaseSegment]:
+        """Recursively retrieve the all of the children of this segment with matching type."""
+        buff = []
+        if self.is_type(*seg_type):
+            buff.append(self)
+
+        for seg in self.segments:
+            buff += seg.get_children_recursive(self, *seg_type)
+
+        return buff
+
     def select_children(
         self,
         start_seg: Optional["BaseSegment"] = None,
