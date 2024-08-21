@@ -9,6 +9,7 @@ from sqlfluff.core.rules import BaseRule, EvalResultType, LintResult, RuleContex
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 from sqlfluff.dialects.dialect_ansi import ObjectReferenceSegment
 from sqlfluff.utils.analysis.select import get_select_statement_info
+from sqlfluff.utils.analysis.delete import get_delete_statement_info
 
 
 class Rule_AL04(BaseRule):
@@ -63,7 +64,7 @@ class Rule_AL04(BaseRule):
     name = "aliasing.unique.table"
     aliases = ("L020",)
     groups: Tuple[str, ...] = ("all", "core", "aliasing", "aliasing.unique")
-    crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
+    crawl_behaviour = SegmentSeekerCrawler({"select_statement", "delete_statement"})
 
     def _lint_references_and_aliases(
         self,
@@ -73,6 +74,7 @@ class Rule_AL04(BaseRule):
         col_aliases: List[ColumnAliasInfo],
         using_cols: List[BaseSegment],
         parent_select: Optional[BaseSegment],
+        parent_delete: Optional[BaseSegment],
         rule_context: RuleContext,
     ) -> Optional[List[LintResult]]:
         """Check whether any aliases are duplicates.
@@ -109,16 +111,29 @@ class Rule_AL04(BaseRule):
         Subclasses of this rule should override the
         `_lint_references_and_aliases` method.
         """
-        assert context.segment.is_type("select_statement")
-        select_info = get_select_statement_info(context.segment, context.dialect)
+        print(context.segment)
+        assert (context.segment.is_type("select_statement") or context.segment.is_type("delete_statement"))
+        print(context.segment)
+        if context.segment.is_type("select_statement"):
+            print(context.segment.select_children())
+            select_info = get_select_statement_info(context.segment, context.dialect)
+        else:
+#             print(context.segment.select_children())
+            select_info = get_delete_statement_info(context.segment, context.dialect)
+            print(select_info)
+
         if not select_info:
             return None
 
-        # Work out if we have a parent select function
+        # Work out if we have a parent select or delete function
         parent_select = None
+        parent_delete = None
         for seg in reversed(context.parent_stack):
             if seg.is_type("select_statement"):
                 parent_select = seg
+                break
+            elif seg.is_type("delete_statement"):
+                parent_delete = seg
                 break
 
         # Pass them all to the function that does all the work.
@@ -130,5 +145,6 @@ class Rule_AL04(BaseRule):
             select_info.col_aliases,
             select_info.using_cols,
             parent_select,
+            parent_delete,
             context,
         )

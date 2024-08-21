@@ -502,6 +502,9 @@ class BaseRule(metaclass=RuleMetaclass):
         memory = root_context.memory
         context = root_context
         for context in self.crawl_behaviour.crawl(root_context):
+#             if context.segment.is_type("delete_statement"):
+#                 print(context.segment)
+#                 print(self.name)
             try:
                 context.memory = memory
                 res = self._eval(context=context)

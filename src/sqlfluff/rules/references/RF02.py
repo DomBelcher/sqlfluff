@@ -9,6 +9,7 @@ from sqlfluff.core.parser import BaseSegment
 from sqlfluff.core.rules import LintResult, RuleContext
 from sqlfluff.rules.aliasing.AL04 import Rule_AL04
 from sqlfluff.utils.analysis.select import get_select_statement_info
+from sqlfluff.utils.analysis.delete import get_delete_statement_info
 
 
 class Rule_RF02(Rule_AL04):
@@ -52,6 +53,7 @@ class Rule_RF02(Rule_AL04):
         col_aliases: List[ColumnAliasInfo],
         using_cols: List[BaseSegment],
         parent_select: Optional[BaseSegment],
+        parent_delete: Optional[BaseSegment],
         rule_context: RuleContext,
     ) -> Optional[List[LintResult]]:
         # Config type hints
@@ -64,6 +66,15 @@ class Rule_RF02(Rule_AL04):
             if parent_select_info:
                 # If we are looking at a subquery, include any table references
                 table_aliases += parent_select_info.table_aliases
+
+        if parent_delete:
+            parent_delete_info = get_delete_statement_info(
+                parent_delete, rule_context.dialect
+            )
+            if parent_delete_info:
+                # If we are looking at a subquery, include any table references
+                table_aliases += parent_delete_info.table_aliases
+
 
         # Do we have more than one? If so, all references should be qualified.
         if len(table_aliases) <= 1:
