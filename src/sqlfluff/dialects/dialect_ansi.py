@@ -1731,7 +1731,6 @@ class SelectClauseElementSegment(BaseSegment):
         ),
     )
 
-
     def get_alias(self) -> Optional[ColumnAliasInfo]:
         """Get info on alias within SELECT clause element."""
         alias_expression_segment = next(self.recursive_crawl("alias_expression"), None)
@@ -1770,6 +1769,7 @@ class SelectClauseElementSegment(BaseSegment):
             aliased_segment=aliased_segment,
             column_reference_segments=column_reference_segments,
         )
+
 
 class SelectClauseModifierSegment(BaseSegment):
     """Things that come after SELECT but before the columns."""
