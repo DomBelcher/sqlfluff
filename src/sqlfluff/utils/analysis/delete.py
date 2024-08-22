@@ -9,7 +9,6 @@ from sqlfluff.dialects.dialect_ansi import (
     FromClauseSegment,
     JoinClauseSegment,
     ObjectReferenceSegment,
-    DeleteClauseElementSegment,
 )
 
 
@@ -20,7 +19,6 @@ class DeleteStatementColumnsAndTables(NamedTuple):
     table_aliases: List[AliasInfo]
     standalone_aliases: List[BaseSegment]  # value table function aliases
     reference_buffer: List[ObjectReferenceSegment]
-    delete_targets: List[DeleteClauseElementSegment]
     col_aliases: List[ColumnAliasInfo]
     using_cols: List[BaseSegment]
     table_reference_buffer: List[ObjectReferenceSegment]
@@ -45,16 +43,6 @@ def get_delete_statement_info(
     if early_exit and not table_aliases and not standalone_aliases:
         return None
 
-    # Iterate through all the references, both in the delete clause, but also
-    # potential others.
-#     sc = segment.get_child("delete_clause")
-
-    # Sometimes there is no delete clause (e.g. "SELECT *" is a select_clause_element)
-#     if not sc:  # pragma: no cover
-#         # TODO: Review whether this clause should be removed. It might only
-#         # have existed for an old way of structuring the Exasol dialect.
-#         return None
-
     # NOTE: In this first crawl, don't crawl inside any sub-selects, that's very
     # important for both isolation and performance reasons.
     reference_buffer = _get_object_references(segment)
@@ -69,18 +57,6 @@ def get_delete_statement_info(
         clause = segment.get_child(potential_clause)
         if clause:
             reference_buffer += _get_object_references(clause)
-
-#     Get all delete targets.
-#     _delete_clause = segment.get_child("delete_clause")
-#     assert _delete_clause, "Delete statement found without delete clause."
-#     delete_targets = cast(
-#         List[DeleteClauseElementSegment],
-#         _delete_clause.get_children("delete_clause_element"),
-#     )
-
-    # Get all column aliases. NOTE: In two steps so mypy can follow.
-#     _pre_aliases = [s.get_alias() for s in delete_targets]
-#     col_aliases = [_alias for _alias in _pre_aliases if _alias is not None]
 
     # Get any columns referred to in a using clause, and extract anything
     # from ON clauses.
@@ -123,7 +99,6 @@ def get_delete_statement_info(
         table_aliases=table_aliases or [],
         standalone_aliases=standalone_aliases or [],
         reference_buffer=reference_buffer,
-        delete_targets=[],
         col_aliases=[],
         using_cols=using_cols,
         table_reference_buffer=table_reference_buffer,
@@ -148,9 +123,8 @@ def get_aliases_from_delete(
     aliases = fc.get_eventual_aliases()
 
     # We only want table aliases, so filter out aliases for value table
-    # functions, lambda parameters and pivot columns.
+    # functions, and lambda parameters.
     standalone_aliases: List[BaseSegment] = []
-    standalone_aliases += _get_pivot_table_columns(segment, dialect)
     standalone_aliases += _get_lambda_argument_columns(segment, dialect)
 
     table_aliases = []
@@ -178,30 +152,6 @@ def _has_value_table_function(table_expr, dialect) -> bool:
         if function_name.raw.upper().strip() in dialect.sets("value_table_functions"):
             return True
     return False
-
-
-def _get_pivot_table_columns(
-    segment: BaseSegment, dialect: Optional[Dialect]
-) -> List[BaseSegment]:
-    if not dialect:
-        # We need the dialect to get the pivot table column names. If
-        # we don't have it, assume the clause does not have a pivot table
-        return []  # pragma: no cover
-
-    fc = segment.recursive_crawl("from_pivot_expression")
-    if not fc:
-        # If there's no pivot clause then just abort.
-        return []  # pragma: no cover
-
-    pivot_table_column_aliases: list[BaseSegment] = []
-
-    for pivot_table_column_alias in segment.recursive_crawl("pivot_column_reference"):
-        if pivot_table_column_alias.raw not in [
-            a.raw for a in pivot_table_column_aliases
-        ]:
-            pivot_table_column_aliases.append(pivot_table_column_alias)
-
-    return pivot_table_column_aliases
 
 
 # Lambda arguments,

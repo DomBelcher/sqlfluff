@@ -111,18 +111,13 @@ class Rule_AL04(BaseRule):
         Subclasses of this rule should override the
         `_lint_references_and_aliases` method.
         """
-        print(context.segment)
         assert (context.segment.is_type("select_statement") or context.segment.is_type("delete_statement"))
-        print(context.segment)
         if context.segment.is_type("select_statement"):
-            print(context.segment.select_children())
-            select_info = get_select_statement_info(context.segment, context.dialect)
+            segment_info = get_select_statement_info(context.segment, context.dialect)
         else:
-#             print(context.segment.select_children())
-            select_info = get_delete_statement_info(context.segment, context.dialect)
-            print(select_info)
+            segment_info = get_delete_statement_info(context.segment, context.dialect)
 
-        if not select_info:
+        if not segment_info:
             return None
 
         # Work out if we have a parent select or delete function
@@ -139,11 +134,11 @@ class Rule_AL04(BaseRule):
         # Pass them all to the function that does all the work.
         # NB: Subclasses of this rules should override the function below
         return self._lint_references_and_aliases(
-            select_info.table_aliases,
-            select_info.standalone_aliases,
-            select_info.reference_buffer,
-            select_info.col_aliases,
-            select_info.using_cols,
+            segment_info.table_aliases,
+            segment_info.standalone_aliases,
+            segment_info.reference_buffer,
+            segment_info.col_aliases,
+            segment_info.using_cols,
             parent_select,
             parent_delete,
             context,

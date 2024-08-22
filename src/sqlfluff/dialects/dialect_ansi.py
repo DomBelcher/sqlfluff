@@ -1770,11 +1770,6 @@ class SelectClauseElementSegment(BaseSegment):
             column_reference_segments=column_reference_segments,
         )
 
-class DeleteClauseElementSegment(BaseSegment):
-    def get_alias(self) -> Optional[ColumnAliasInfo]:
-        pass
-
-
 class SelectClauseModifierSegment(BaseSegment):
     """Things that come after SELECT but before the columns."""
 
@@ -1801,25 +1796,6 @@ class SelectClauseSegment(BaseSegment):
         terminators=[Ref("SelectClauseTerminatorGrammar")],
         parse_mode=ParseMode.GREEDY_ONCE_STARTED,
     )
-
-
-# class DeleteClauseSegment(BaseSegment):
-#     """A group of elements in a select target statement."""
-#
-#     type = "delete_clause"
-#     match_grammar: Matchable = Sequence(
-#         "DELETE",
-#         Ref("SelectClauseModifierSegment", optional=True),
-#         Indent,
-#         Delimited(
-#             Ref("SelectClauseElementSegment"),
-#             allow_trailing=True,
-#         ),
-#         Dedent,
-#         terminators=[Ref("SelectClauseTerminatorGrammar")],
-#         parse_mode=ParseMode.GREEDY_ONCE_STARTED,
-#     )
-
 
 class MatchConditionSegment(BaseSegment):
     """A stub segment to be used in Snowflake ASOF joins."""
