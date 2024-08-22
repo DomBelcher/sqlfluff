@@ -1731,6 +1731,7 @@ class SelectClauseElementSegment(BaseSegment):
         ),
     )
 
+
     def get_alias(self) -> Optional[ColumnAliasInfo]:
         """Get info on alias within SELECT clause element."""
         alias_expression_segment = next(self.recursive_crawl("alias_expression"), None)
@@ -1796,6 +1797,7 @@ class SelectClauseSegment(BaseSegment):
         terminators=[Ref("SelectClauseTerminatorGrammar")],
         parse_mode=ParseMode.GREEDY_ONCE_STARTED,
     )
+
 
 class MatchConditionSegment(BaseSegment):
     """A stub segment to be used in Snowflake ASOF joins."""
